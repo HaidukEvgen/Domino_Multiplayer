@@ -20,12 +20,11 @@ namespace DominoClient
         {
             InitializeComponent();
         }
-        private Thread outputThread; // поток для полученных от сервера данных
-        private TcpClient tcpClient; // клиент для установления соединения
-        private NetworkStream stream; // данные из потока
-        private StreamWriter writer; // облегчает запись в поток
-        private StreamReader reader; // облегчает чтение из потока
-        private string id;
+        private Thread connectionThread;
+        private TcpClient tcpClient;
+        private NetworkStream stream;
+        private StreamWriter writer;
+        private StreamReader reader;
         private string name;
         private int orderNumber;
         private const int PORT = 50000;
@@ -37,19 +36,16 @@ namespace DominoClient
 
         private void startButton_Click(object sender, EventArgs e)
         {
-            //подключиться к серверу и получить связанный сетевой поток 
             try
             {
-                //преобразуем dns-имя в ip-адрес
                 string address = Dns.GetHostAddresses(hostNameTB.Text)[0].ToString();
                 tcpClient = new TcpClient(address, PORT);
                 stream = tcpClient.GetStream();
                 writer = new StreamWriter(stream) { AutoFlush = true };
                 reader = new StreamReader(stream);
-                // запустить новый поток для отправки/получения сообщения
-                outputThread = new Thread(new ThreadStart(Run));
-                outputThread.Start();
-                name = nameTextBox.Text == null ? nameTextBox.PlaceholderText : nameTextBox.Text;
+                connectionThread = new Thread(new ThreadStart(Run));
+                connectionThread.Start();
+                name = nameTextBox.Text == "" ? nameTextBox.PlaceholderText : nameTextBox.Text;
                 writer.WriteLine(name);
             }
             catch (SocketException)
@@ -61,44 +57,35 @@ namespace DominoClient
             connectionDoneLabel.Visible = true;
         }
 
-        // управляющий поток, который позволяет непрерывно обновлять отображение игрового поля
         public void Run()
         {
-            // получить id игрока 
-            id = reader.ReadLine();
             orderNumber = Int32.Parse(reader.ReadLine());
-            // обработка входящих сообщений 
-            try
-            {
-                // получение сообщений, отправленных клиенту
+            //try
+            //{
                 while (gameIsGoing)
                 {
                     string message = reader.ReadLine();
                     if (message != null)
+                    {
                         ProcessMessage(message);
+                    }
                 }
-            }
-            catch (IOException)
+            /*}
+            catch (Exception)
             {
-                MessageBox.Show("Потеряно соединение с сервером. Игра закончена.","Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+                MessageBox.Show("Потеряно соединение с сервером. Игра закончена.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }*/
+            this.Invoke(new Action(() => { Close(); }));
         }
 
-        #region Изменение label безопасным способом
+        #region Изменение компонентов безопасным способом
 
-        // делегат, который позволяет вызывать метод по изменению 
-        // компонента label в потоке безопасным способом
         private delegate void labelDelegate(string message, Label desiredLabel);
 
-        // метод ChangeLabel устанавливает свойство label
-        // потокобезопасным способом
         private void ChangeLabel(string message, Label desiredLabel)
         {
-            // если изменение desiredLabel не является потокобезопасным
             if (desiredLabel.InvokeRequired)
             {
-                // используем метод Invoke, чтобы
-                //выполнить ChangeLabel с помощью делегата
                 Invoke(new labelDelegate(ChangeLabel),
                 new object[] { message, desiredLabel });
             }
@@ -106,65 +93,137 @@ namespace DominoClient
                 desiredLabel.Text = message;
         }
 
-        private delegate void buttonDelegate(bool enabled, Button desiredButton);
-        private void ChangeButtonEnabled(bool enabled, Button desiredButton)
+        private delegate void controlDelegate(bool enabled, Control control);
+        private void ChangeControlEnabled(bool enabled, Control control)
         {
-            if (desiredButton.InvokeRequired)
+            if (control.InvokeRequired)
             {
-                Invoke(new buttonDelegate(ChangeButtonEnabled),
-                new object[] { enabled, desiredButton });
+                Invoke(new controlDelegate(ChangeControlEnabled),
+                new object[] { enabled, control });
             }
             else
-                desiredButton.Enabled = enabled;
+                control.Enabled = enabled;
         }
+        private void ChangeControlVisible(bool enabled, Control control)
+        {
+            if (control.InvokeRequired)
+            {
+                Invoke(new controlDelegate(ChangeControlVisible),
+                new object[] { enabled, control });
+            }
+            else
+                control.Visible = enabled;
+        }
+        
         #endregion
 
-        // обработка сообщений, отправленных клиенту
         public void ProcessMessage(string message)
         {
-            switch(message) {
-                case ("Ожидаем игрока 2"):
+            switch (message)
+            {
+                case (RP.GAME_STARTED):
                     {
-                        ChangeLabel("Ожидаем игрока 2...", statusLabel);
+                        ChangeLabel(RP.frases[RP.GAME_STARTED], statusLabel);
                         break;
                     }
-                case ("Ожидаем игрока 3"):
+                case (RP.YOUR_DOMINOES):
                     {
-                        ChangeLabel("Ожидаем игрока 3...", statusLabel);
+                        string line = "";
+                        int tilesAmount = Int32.Parse(reader.ReadLine());
+                        for (int i = 0; i < tilesAmount; i++)
+                        {
+                            line += reader.ReadLine() + " ";
+                        }
+                        ChangeLabel(line, MyDominoesLabel);
                         break;
                     }
-                case ("Ожидаем игрока 4"):
+                case (RP.NO_SUCH_DOMINO):
                     {
-                        ChangeLabel("Ожидаем игрока 4...", statusLabel);
+                        MessageBox.Show(RP.frases[RP.NO_SUCH_DOMINO]);
                         break;
                     }
-                case ("Игра началась"):
+                case (RP.UNSUTABLE_DOMINO):
                     {
-                        ChangeLabel("Игра началась", statusLabel);
+                        MessageBox.Show(RP.frases[RP.UNSUTABLE_DOMINO]);
+                        break;
+                    }
+                case (RP.GAME_ENDED):
+                    {
+                        MessageBox.Show(RP.frases[RP.GAME_ENDED]);
+                        gameIsGoing = false;
+                        break;
+                    }
+                case (RP.GAME_NUMS):
+                    {
+                        ChangeLabel(reader.ReadLine(), numsLabel);
+                        break;
+                    }
+                case (RP.WHICH_DIRECTION):
+                    {
+                        ChangeControlEnabled(true, leftCheckBox);
+                        break;
+                    }
+                case (RP.BAZAR):
+                    {
+                        ChangeControlVisible(true, bazarPanel);
                         break;
                     }
                 default:
                     {
-                        if(message == "Ходит игрок " + orderNumber)
+                        if (message == RP.PLAYER_GOES + orderNumber)
                         {
-                            ChangeLabel("Ваш ход", statusLabel);
-                            ChangeButtonEnabled(true, makeTurnButton);
-                        } else 
-                            ChangeLabel(message, statusLabel);
+                            ChangeLabel("", MyDominoesLabel);
+                            writer.WriteLine(RQ.MY_DOMINOES);
+                            writer.WriteLine(RQ.GAME_NUMS);
+                            ChangeLabel(RP.frases[RP.PLAYER_GOES], statusLabel);
+                            ChangeControlEnabled(true, gameNumsButton);
+                            ChangeControlEnabled(true, SendDominoesButton);
+                        }
+                        else
+                        if (message.StartsWith(RP.WAITING_PLAYER))
+                        {
+                            ChangeLabel(RP.frases[RP.WAITING_PLAYER] + message[message.Length - 1] + "...", statusLabel);
+                        }
+                        //ChangeLabel(message, statusLabel);
                         break;
                     }
             }
         }
 
-        private void makeTurnButton_Click(object sender, EventArgs e)
+
+        private void gameNumsButton_Click(object sender, EventArgs e)
         {
-            writer.WriteLine("Я игрок " + orderNumber + " и я походил ");
-            ChangeButtonEnabled(false, makeTurnButton);
+            writer.WriteLine(RQ.GAME_NUMS);
+            //ChangeButtonEnabled(false, gameNumsButton);
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             Environment.Exit(Environment.ExitCode);
+        }
+
+        private void SendDominoesButton_Click(object sender, EventArgs e)
+        {
+            MyDominoesLabel.Text = "";
+            writer.WriteLine(RQ.MY_DOMINOES);
+        }
+
+        private void placeDominoButton_Click(object sender, EventArgs e)
+        {
+            if (leftCheckBox.Enabled)
+            {
+                writer.WriteLine(RQ.DIR_TURN + firstDominoNum.Value + ":" + secondDominoNum.Value + (leftCheckBox.Checked ? "1" : "0"));
+                ChangeControlEnabled(false, leftCheckBox);
+            }
+            else
+                writer.WriteLine(RQ.MY_TURN + firstDominoNum.Value + ":" + secondDominoNum.Value);
+        }
+
+        private void bazarButton_Click(object sender, EventArgs e)
+        {
+            writer.WriteLine(RQ.GET_BAZAR_DOMINO);
+            ChangeControlVisible(false, bazarPanel);
+            writer.WriteLine(RQ.MY_DOMINOES);
         }
     }
 }
