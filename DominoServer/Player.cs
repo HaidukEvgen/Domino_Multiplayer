@@ -11,27 +11,27 @@ namespace DominoServer
 {
     public class Player
     {
-        internal TcpClient tcpClient; // сокет для приема соединения
-        private NetworkStream socketStream; // данные из потока
-        private StreamWriter writer; // облегчает запись в поток
-        private StreamReader reader; // облегчает чтение из потока 
+        internal TcpClient tcpClient;
+        private NetworkStream socketStream;
+        private StreamWriter writer;
+        private StreamReader reader;
         private Game game;
         private Thread thread;
         private ServerForm server;
-        public Thread Thread { 
-            get { return thread; } set { thread = value; }
+        public static bool isTurnDone = false;
+        public Thread Thread
+        {
+            get { return thread; }
+            set { thread = value; }
         }
-        private int number; // номер игрока 
         private string name;
-        internal bool threadSuspended = true; // если мы ждем второго игрока 
-        internal string Id { get; } = Guid.NewGuid().ToString();
+        internal bool threadSuspended = true;
 
-        public Player(TcpClient tcpClient, ServerForm server, Game game, int playerNumber)
+        public Player(TcpClient tcpClient, ServerForm server, Game game)
         {
             this.tcpClient = tcpClient;
             this.game = game;
             this.server = server;
-            this.number = playerNumber;
             this.socketStream = tcpClient.GetStream();
             this.writer = new StreamWriter(socketStream, Encoding.UTF8) { AutoFlush = true };
             this.reader = new StreamReader(socketStream);
@@ -42,17 +42,14 @@ namespace DominoServer
         {
             return Thread.CurrentThread.ManagedThreadId == game.PlayerThreads[game.CurPlayerOrder - 1].ManagedThreadId;
         }
-        
-        // позволяет игрокам делать ходы и получать ходы от другого игрока 
-        
+
         private void WaitForPlayers()
         {
             while (game.CurPlayersAmount < game.PlayersAmount)
             {
                 int waitingForPlayer = game.CurPlayersAmount + 1;
                 threadSuspended = true;
-                writer.WriteLine("Ожидаем игрока " + waitingForPlayer);
-                // ждем уведомления от сервера, что другой игрок подключился
+                SendResponses(RP.WAITING_PLAYER + waitingForPlayer);
                 lock (this)
                 {
                     while (threadSuspended)
@@ -64,160 +61,175 @@ namespace DominoServer
         public void Run()
         {
             name = reader.ReadLine();
-            writer.WriteLine(Id);
-            writer.WriteLine(game.CurPlayersAmount);
+            SendResponses(game.CurPlayersAmount.ToString());
             WaitForPlayers();
-            writer.WriteLine("Игра началась");
-            writer.WriteLine("Ходит игрок " + game.CurPlayerOrder);
+            SendResponses(RP.GAME_STARTED, RP.PLAYER_GOES + game.CurPlayerOrder);
             if (ThisThreadTurn())
-                server.DisplayMessage("Ходит игрок " + game.CurPlayerOrder);
+                server.DisplayMessage(RP.frases[RP.PLAYER_GOES] + game.CurPlayerOrder);
             while (game.IsGoing)
             {
-                while (tcpClient.Available == 0)
-                { }
-                if (ThisThreadTurn())
+                SkipOldRequests();
+                try
                 {
-                    string message = reader.ReadLine();
-                    server.DisplayMessage("Игрок " + game.CurPlayerOrder + " походил");
-                    game.GetNextTurn();
-                    server.DisplayMessage("Ходит игрок " + game.CurPlayerOrder);
-                    BroadcastMessage("Ходит игрок " + game.CurPlayerOrder, game);
+                    while (tcpClient.Available == 0)
+                    { }
+                }
+                catch (ObjectDisposedException)
+                {
+                    System.Windows.Forms.MessageBox.Show("Игрок " + name + " отключился. Продолжение игры невозможно");
+                    CloseServer();
+                }
+                if (ThisThreadTurn())
+                    ProcessTurn();
+                if (game.DominoGame.IsRoundOver(game.CurPlayersAmount)) {
+                    System.Windows.Forms.MessageBox.Show("Раунд окончен");
+                    break;
                 }
             }
-        #region trash
-        /*bool done = false;
-        // отобразить на сервере, что соединение было установлено
-
-        //записываем имена игроков в лэйблы
-        if (server.readName1() == "name1")
-        {
-            server.DisplayName1(playerName);
-        }
-        else
-        {
-            server.DisplayName2(playerName);
         }
 
-        // отправить клиенту метку текущего игрока
-        //writer.Write(mark);
-
-        server.DisplayMessage("Игрок под именем " + playerName + " присоединился и ходит \""
-                                         + (number == 0 ? 'X' : 'O') + "\".\r\n");
-
-        // отправить клиенту имя текущего игрока
-        writer.Write(playerName);
-
-        // X должен ждать пока подключится другой игрок
-        if (mark == 'X')
+        private void SkipOldRequests()
         {
-            writer.Write("Ожидаем второго игрока.");
-
-            // ждем уведомления от сервера, что другой игрок подключился
-            lock (this)
+            while (tcpClient.Available != 0)
             {
-                while (threadSuspended)
-                    Monitor.Wait(this);
+                reader.ReadLine();
             }
-            writer.Write("Второй игрок подключился. Ваш ход.");
-        }
-        else
-        {
-            writer.Write("Вы подключились. Ход противника.");
         }
 
-
-        while (opponentName == "name1" || opponentName == "name2" || opponentName == "...")
+        private void ProcessTurn()
         {
-            //проверяем какое из двух имен является именем оппонента
-            if (server.readName1() == playerName)
+            //process first turn
+            if (game.DominoGame.isFirstTurn)
             {
-                opponentName = server.readName2();
+                string message = "";
+                while (true)
+                {
+                    message = RecieveRequest();
+                    if (!message.StartsWith(RQ.MY_TURN))
+                        ProcessMessage(message);
+                    else
+                        break;
+                }
+                ProcessMessage(RQ.FIRST_TURN + message);
+                game.DominoGame.isFirstTurn = false;
+                goto EndOfTurn;
+            }
+            //process bazar until can make move
+            while (!game.DominoGame.CanMakeTurn(game.CurPlayerOrder) && game.DominoGame.bazar.Length > 0)
+            {
+                SendResponses(RP.BAZAR);
+                string message = RecieveRequest();
+                ProcessMessage(message);
+            }
+            //process turn
+            if (game.DominoGame.CanMakeTurn(game.CurPlayerOrder))
+            {
+                while (!isTurnDone)
+                {
+                    string message = RecieveRequest();
+                    ProcessMessage(message);
+                }
+                server.DisplayMessage("Игрок "  + game.CurPlayerOrder + " походил");
             }
             else
             {
-                opponentName = server.readName1();
+                server.DisplayMessage("Игрок " + game.CurPlayerOrder + " пропустил ход");
+            }
+            EndOfTurn:
+            isTurnDone = false;
+            game.GetNextTurn();
+            server.DisplayMessage(RP.frases[RP.PLAYER_GOES] + game.CurPlayerOrder);
+            BroadcastMessage(RP.PLAYER_GOES + game.CurPlayerOrder, game);
+        }
+
+        private void ProcessMessage(string message)
+        {
+            if (message.StartsWith(RQ.MY_DOMINOES))
+            {
+                server.DisplayMessage("Игрок " + game.CurPlayerOrder + " запросил его массив домино");
+                SendListResponse(game.DominoGame.GetTilesArr(game.CurPlayerOrder));
+            }
+            else
+            if (message.StartsWith(RQ.MY_TURN))
+            {
+                server.DisplayMessage("Игрок " + game.CurPlayerOrder + " запросил положить домино");
+                SendListResponse(game.DominoGame.TryToPlaceDomino(game.CurPlayerOrder, message));
+            }
+            else
+            if (message.StartsWith(RQ.GAME_NUMS))
+            {
+                server.DisplayMessage("Игрок " + game.CurPlayerOrder + " запросил крайние числа");
+                SendListResponse(game.DominoGame.GetGameNums());
+            }
+            else
+            if (message.StartsWith(RQ.DIR_TURN))
+            {
+                server.DisplayMessage("Игрок " + game.CurPlayerOrder + " запросил положить домино");
+                SendListResponse(game.DominoGame.PlaceDominoDifferent(game.CurPlayerOrder, message));
+            }
+            else
+            if (message.StartsWith(RQ.GET_BAZAR_DOMINO))
+            {
+                server.DisplayMessage("Игрок " + game.CurPlayerOrder + " запросил домино с базара");
+                game.DominoGame.GetBazarDomino(game.CurPlayerOrder);
+            }
+            else
+            if (message.StartsWith(RQ.FIRST_TURN))
+            {
+                server.DisplayMessage("Игрок " + game.CurPlayerOrder + " сделал первый ход");
+                game.DominoGame.PlaceFirstDomino(game.CurPlayerOrder, message);
             }
         }
-        //отправляем имя оппонента клиенту
-        writer.Write(opponentName);
 
-
-        // играем
-        while (!done)
+        private string RecieveRequest()
         {
-            // ждём, пока данные станут доступными 
-            while (connection.Available == 0)
+            string message = "";
+            try
             {
-                Thread.Sleep(1000);
-
-                if (server.disconnected)
-                {
-                    server.DisplayMessage("Что-то пошло не так... Игра закончена.");
-                    return;
-                }
+                message = reader.ReadLine();
             }
-
-            // получаем данные
-            int location = reader.ReadInt32();
-
-            // если ход корректный, отобразим его на сервере
-            if (server.ValidMove(location, number) && !server.GameOver())
+            catch (IOException)
             {
-                server.DisplayMessage(playerName + ": ход на ячейку № " + location + ".\r\n");
-                writer.Write("Ход был корректным.");
+                System.Windows.Forms.MessageBox.Show("Игрок " + name + " отключился. Продолжение игры невозможно");
+                CloseServer();
             }
-            else if (server.GameOver())
-            {
-                server.DisplayMessage(playerName + ": ход на ячейку № " + location + ".\r\n");
-                writer.Write(condition);
-            }
-            else // ход некорректный
-                writer.Write("Ход был некорректным. Попробуйте снова.");
+            return message;
+        }
 
-            // если игра окончена, установливаем для параметра done значение true, чтобы выйти из цикла while 
+        private void SendResponses(params string[] lines)
+        {
+            foreach (var line in lines)
+                writer.WriteLine(line);
+        }
 
-            if (server.GameOver())
-            {
-                if (condition == "победитель1" || condition == "победитель2" || condition == "победитель3" ||
-                    condition == "победитель4" || condition == "победитель5" || condition == "победитель6" ||
-                    condition == "победитель7" || condition == "победитель8")
-                {
-                    server.DisplayMessage("Игрок " + playerName + " победил.");
-                    writer.Write(condition);
-                }
-                else if (condition == "ничья")
-                {
-                    server.DisplayMessage("Это ничья");
-                    writer.Write(condition);
-                }
-
-                lock (this)
-                {
-                    playAgain = reader.ReadString();
-                    while (playAgain == null)
-                        Monitor.Wait(this);
-                }
-
-                if (playAgain == "Выход")
-                {
-                    server.DisplayMessage("\r\nИгра окончена.\r\n");
-                    done = true;
-                }
-            }
-        }*/
-        #endregion
-            writer.Close();
-            reader.Close();
-            socketStream.Close();
-            tcpClient.Close();
+        private void SendListResponse(List<string> response)
+        {
+            foreach (var line in response)
+                writer.WriteLine(line);
         }
 
         private static void BroadcastMessage(string message, Game game)
         {
             foreach (var player in game.Players)
-            {
                 player.writer.WriteLine(message);
-            }
+        }
+
+        public void CloseConnections()
+        {
+            //writer.WriteLine(RP.GAME_ENDED);
+            writer.Close();
+            reader.Close();
+            socketStream.Close();
+            tcpClient.Close();
+        }
+        private delegate void CloseDelegate();
+
+        private void CloseServer()
+        {
+            if (server.InvokeRequired)
+                server.Invoke(new CloseDelegate(CloseServer));
+            else
+                server.Close();
         }
     }
 }

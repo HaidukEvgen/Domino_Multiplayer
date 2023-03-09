@@ -11,15 +11,18 @@ namespace DominoServer
     {
         private Player[] players;
         private Thread[] playerThreads;
+        public DominoGame DominoGame { get; }
+        
         public Game(int playersAmount)
         {
             PlayersAmount = playersAmount;
             players = new Player[PlayersAmount];
             playerThreads = new Thread[PlayersAmount];
+            DominoGame = new DominoGame(playersAmount);
         }
         public Thread[] PlayerThreads
         {
-            get { return playerThreads; } 
+            get { return playerThreads; }
             set { playerThreads = value; }
         }
         public Player[] Players { get { return players; } }
@@ -34,6 +37,7 @@ namespace DominoServer
             Players[i].Thread.Start();
             PlayerThreads[i] = Players[i].Thread;
         }
+
         public void GetNextTurn()
         {
             if (CurPlayerOrder == PlayersAmount)
@@ -42,10 +46,6 @@ namespace DominoServer
             }
             else
                 CurPlayerOrder++;
-        }
-
-        public void FindFirstTurn()
-        {
         }
     }
 }
