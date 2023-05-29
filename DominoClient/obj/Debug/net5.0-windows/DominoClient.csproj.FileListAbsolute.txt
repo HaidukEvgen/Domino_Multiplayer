@@ -9,10 +9,12 @@ C:\2 курс\4 семестр\КСиС\Курсач\DominoClient\bin\Debug\net5
 C:\2 курс\4 семестр\КСиС\Курсач\DominoClient\bin\Debug\net5.0-windows\DominoClient.runtimeconfig.json
 C:\2 курс\4 семестр\КСиС\Курсач\DominoClient\bin\Debug\net5.0-windows\DominoClient.runtimeconfig.dev.json
 C:\2 курс\4 семестр\КСиС\Курсач\DominoClient\bin\Debug\net5.0-windows\DominoClient.dll
-C:\2 курс\4 семестр\КСиС\Курсач\DominoClient\bin\Debug\net5.0-windows\ref\DominoClient.dll
 C:\2 курс\4 семестр\КСиС\Курсач\DominoClient\bin\Debug\net5.0-windows\DominoClient.pdb
 C:\2 курс\4 семестр\КСиС\Курсач\DominoClient\obj\Debug\net5.0-windows\DominoClient.MainForm.resources
 C:\2 курс\4 семестр\КСиС\Курсач\DominoClient\obj\Debug\net5.0-windows\DominoClient.dll
 C:\2 курс\4 семестр\КСиС\Курсач\DominoClient\obj\Debug\net5.0-windows\ref\DominoClient.dll
 C:\2 курс\4 семестр\КСиС\Курсач\DominoClient\obj\Debug\net5.0-windows\DominoClient.pdb
 C:\2 курс\4 семестр\КСиС\Курсач\DominoClient\obj\Debug\net5.0-windows\DominoClient.genruntimeconfig.cache
+C:\2 курс\4 семестр\КСиС\Курсач\DominoClient\obj\Debug\net5.0-windows\DominoClient.RegisterForm.resources
+C:\2 курс\4 семестр\КСиС\Курсач\DominoClient\obj\Debug\net5.0-windows\DominoClient.Properties.Resources.resources
+C:\2 курс\4 семестр\КСиС\Курсач\DominoClient\obj\Debug\net5.0-windows\refint\DominoClient.dll

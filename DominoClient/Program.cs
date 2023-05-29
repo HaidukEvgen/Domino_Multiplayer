@@ -15,7 +15,7 @@ namespace DominoClient
                 SetProcessDPIAware();
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainForm());
+            Application.Run(new RegisterForm());
         }
 
         [System.Runtime.InteropServices.DllImport("user32.dll")]
