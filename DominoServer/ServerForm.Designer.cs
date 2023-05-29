@@ -29,115 +29,142 @@ namespace DominoServer
         /// </summary>
         private void InitializeComponent()
         {
-            this.displayTextBox = new System.Windows.Forms.TextBox();
-            this.name1 = new System.Windows.Forms.Label();
-            this.name2 = new System.Windows.Forms.Label();
-            this.twoRB = new System.Windows.Forms.RadioButton();
-            this.threeRB = new System.Windows.Forms.RadioButton();
-            this.fourRB = new System.Windows.Forms.RadioButton();
-            this.playersLabel = new System.Windows.Forms.Label();
-            this.startButton = new System.Windows.Forms.Button();
-            this.SuspendLayout();
+            displayTextBox = new System.Windows.Forms.TextBox();
+            name1 = new System.Windows.Forms.Label();
+            name2 = new System.Windows.Forms.Label();
+            twoRB = new System.Windows.Forms.RadioButton();
+            threeRB = new System.Windows.Forms.RadioButton();
+            fourRB = new System.Windows.Forms.RadioButton();
+            playersLabel = new System.Windows.Forms.Label();
+            startButton = new System.Windows.Forms.Button();
+            label1 = new System.Windows.Forms.Label();
+            pointsAimUpDown = new System.Windows.Forms.NumericUpDown();
+            ((System.ComponentModel.ISupportInitialize)pointsAimUpDown).BeginInit();
+            SuspendLayout();
             // 
             // displayTextBox
             // 
-            this.displayTextBox.Location = new System.Drawing.Point(12, 56);
-            this.displayTextBox.Multiline = true;
-            this.displayTextBox.Name = "displayTextBox";
-            this.displayTextBox.ReadOnly = true;
-            this.displayTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.displayTextBox.Size = new System.Drawing.Size(734, 382);
-            this.displayTextBox.TabIndex = 0;
+            displayTextBox.Location = new System.Drawing.Point(12, 76);
+            displayTextBox.Multiline = true;
+            displayTextBox.Name = "displayTextBox";
+            displayTextBox.ReadOnly = true;
+            displayTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            displayTextBox.Size = new System.Drawing.Size(734, 382);
+            displayTextBox.TabIndex = 0;
             // 
             // name1
             // 
-            this.name1.AutoSize = true;
-            this.name1.Location = new System.Drawing.Point(127, 446);
-            this.name1.Name = "name1";
-            this.name1.Size = new System.Drawing.Size(0, 20);
-            this.name1.TabIndex = 1;
+            name1.AutoSize = true;
+            name1.Location = new System.Drawing.Point(127, 446);
+            name1.Name = "name1";
+            name1.Size = new System.Drawing.Size(0, 18);
+            name1.TabIndex = 1;
             // 
             // name2
             // 
-            this.name2.AutoSize = true;
-            this.name2.Location = new System.Drawing.Point(575, 446);
-            this.name2.Name = "name2";
-            this.name2.Size = new System.Drawing.Size(0, 20);
-            this.name2.TabIndex = 2;
+            name2.AutoSize = true;
+            name2.Location = new System.Drawing.Point(575, 446);
+            name2.Name = "name2";
+            name2.Size = new System.Drawing.Size(0, 18);
+            name2.TabIndex = 2;
             // 
             // twoRB
             // 
-            this.twoRB.AutoSize = true;
-            this.twoRB.Checked = true;
-            this.twoRB.Location = new System.Drawing.Point(240, 10);
-            this.twoRB.Name = "twoRB";
-            this.twoRB.Size = new System.Drawing.Size(108, 24);
-            this.twoRB.TabIndex = 3;
-            this.twoRB.TabStop = true;
-            this.twoRB.Text = "Два игрока";
-            this.twoRB.UseVisualStyleBackColor = true;
+            twoRB.AutoSize = true;
+            twoRB.Checked = true;
+            twoRB.Location = new System.Drawing.Point(256, 10);
+            twoRB.Name = "twoRB";
+            twoRB.Size = new System.Drawing.Size(116, 22);
+            twoRB.TabIndex = 3;
+            twoRB.TabStop = true;
+            twoRB.Text = "Два игрока";
+            twoRB.UseVisualStyleBackColor = true;
             // 
             // threeRB
             // 
-            this.threeRB.AutoSize = true;
-            this.threeRB.Location = new System.Drawing.Point(354, 10);
-            this.threeRB.Name = "threeRB";
-            this.threeRB.Size = new System.Drawing.Size(108, 24);
-            this.threeRB.TabIndex = 4;
-            this.threeRB.Text = "Три игрока";
-            this.threeRB.UseVisualStyleBackColor = true;
+            threeRB.AutoSize = true;
+            threeRB.Location = new System.Drawing.Point(371, 11);
+            threeRB.Name = "threeRB";
+            threeRB.Size = new System.Drawing.Size(111, 22);
+            threeRB.TabIndex = 4;
+            threeRB.Text = "Три игрока";
+            threeRB.UseVisualStyleBackColor = true;
             // 
             // fourRB
             // 
-            this.fourRB.AutoSize = true;
-            this.fourRB.Location = new System.Drawing.Point(468, 10);
-            this.fourRB.Name = "fourRB";
-            this.fourRB.Size = new System.Drawing.Size(134, 24);
-            this.fourRB.TabIndex = 5;
-            this.fourRB.Text = "Четыре игрока";
-            this.fourRB.UseVisualStyleBackColor = true;
+            fourRB.AutoSize = true;
+            fourRB.Location = new System.Drawing.Point(481, 12);
+            fourRB.Name = "fourRB";
+            fourRB.Size = new System.Drawing.Size(145, 22);
+            fourRB.TabIndex = 5;
+            fourRB.Text = "Четыре игрока";
+            fourRB.UseVisualStyleBackColor = true;
             // 
             // playersLabel
             // 
-            this.playersLabel.AutoSize = true;
-            this.playersLabel.Location = new System.Drawing.Point(12, 14);
-            this.playersLabel.Name = "playersLabel";
-            this.playersLabel.Size = new System.Drawing.Size(222, 20);
-            this.playersLabel.TabIndex = 6;
-            this.playersLabel.Text = "Выберите количество игроков";
+            playersLabel.AutoSize = true;
+            playersLabel.Location = new System.Drawing.Point(12, 12);
+            playersLabel.Name = "playersLabel";
+            playersLabel.Size = new System.Drawing.Size(244, 18);
+            playersLabel.TabIndex = 6;
+            playersLabel.Text = "Выберите количество игроков";
             // 
             // startButton
             // 
-            this.startButton.Location = new System.Drawing.Point(608, 8);
-            this.startButton.Name = "startButton";
-            this.startButton.Size = new System.Drawing.Size(138, 29);
-            this.startButton.TabIndex = 7;
-            this.startButton.Text = "Начать";
-            this.startButton.UseVisualStyleBackColor = true;
-            this.startButton.Click += new System.EventHandler(this.startButton_Click);
+            startButton.Location = new System.Drawing.Point(626, 8);
+            startButton.Name = "startButton";
+            startButton.Size = new System.Drawing.Size(120, 29);
+            startButton.TabIndex = 7;
+            startButton.Text = "Начать";
+            startButton.UseVisualStyleBackColor = true;
+            startButton.Click += StartButton_Click;
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new System.Drawing.Point(12, 43);
+            label1.Name = "label1";
+            label1.Size = new System.Drawing.Size(174, 18);
+            label1.TabIndex = 8;
+            label1.Text = "Выберите цель очков";
+            // 
+            // pointsAimUpDown
+            // 
+            pointsAimUpDown.Location = new System.Drawing.Point(188, 41);
+            pointsAimUpDown.Maximum = new decimal(new int[] { 300, 0, 0, 0 });
+            pointsAimUpDown.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+            pointsAimUpDown.Name = "pointsAimUpDown";
+            pointsAimUpDown.Size = new System.Drawing.Size(62, 26);
+            pointsAimUpDown.TabIndex = 9;
+            pointsAimUpDown.Value = new decimal(new int[] { 100, 0, 0, 0 });
             // 
             // ServerForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(120F, 120F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
-            this.ClientSize = new System.Drawing.Size(758, 470);
-            this.Controls.Add(this.startButton);
-            this.Controls.Add(this.playersLabel);
-            this.Controls.Add(this.fourRB);
-            this.Controls.Add(this.threeRB);
-            this.Controls.Add(this.twoRB);
-            this.Controls.Add(this.name2);
-            this.Controls.Add(this.name1);
-            this.Controls.Add(this.displayTextBox);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
-            this.MaximizeBox = false;
-            this.Name = "ServerForm";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Domino-Server";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ServerForm_FormClosing);
-            this.ResumeLayout(false);
-            this.PerformLayout();
-
+            AutoScaleDimensions = new System.Drawing.SizeF(120F, 120F);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            BackColor = System.Drawing.Color.DarkGray;
+            ClientSize = new System.Drawing.Size(758, 470);
+            Controls.Add(pointsAimUpDown);
+            Controls.Add(label1);
+            Controls.Add(startButton);
+            Controls.Add(playersLabel);
+            Controls.Add(fourRB);
+            Controls.Add(threeRB);
+            Controls.Add(twoRB);
+            Controls.Add(name2);
+            Controls.Add(name1);
+            Controls.Add(displayTextBox);
+            Font = new System.Drawing.Font("Century Gothic", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            MaximizeBox = false;
+            Name = "ServerForm";
+            StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
+            Text = "Domino-Server";
+            FormClosing += ServerForm_FormClosing;
+            Load += ServerForm_Load;
+            ((System.ComponentModel.ISupportInitialize)pointsAimUpDown).EndInit();
+            ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
@@ -150,6 +177,8 @@ namespace DominoServer
         private System.Windows.Forms.RadioButton fourRB;
         private System.Windows.Forms.Label playersLabel;
         private System.Windows.Forms.Button startButton;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.NumericUpDown pointsAimUpDown;
     }
 }
 

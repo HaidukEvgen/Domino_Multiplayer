@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.ProgressBar;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace DominoServer
 {
@@ -13,8 +15,10 @@ namespace DominoServer
         public const int INITIAL_AMOUNT = 7;
         public Domino[] tilesArr = new Domino[MAX_AMOUNT];
         public Domino[] bazar;
+        public List<int> bazarTilesLeft;
         public DominoPlayer[] players;
-        private int playersAmount;
+        private readonly int playersAmount;
+        private readonly int pointsAim;
         public int LeftNum { get; set; }
         public int RightNum { get; set; }
 
@@ -23,12 +27,36 @@ namespace DominoServer
         public void FindFirstTurn()
         { }
 
-        public DominoGame(int _playersAmount)
+
+        internal void InitNewRound()
+        {
+            this.players = new DominoPlayer[playersAmount];
+            this.bazar = playersAmount == 4 ? Array.Empty<Domino>() : new Domino[MAX_AMOUNT - playersAmount * INITIAL_AMOUNT];
+            this.bazarTilesLeft = new List<int>();
+            for (int i = 1; i <= bazar.Length; i++)
+            {
+                bazarTilesLeft.Add(i);
+            }
+            InitGame();
+        }
+
+        public DominoGame(int _playersAmount, int _pointsAim)
         {
             this.playersAmount = _playersAmount;
+            this.pointsAim = _pointsAim;
             this.players = new DominoPlayer[_playersAmount];
-            this.bazar = _playersAmount == 4 ? null : new Domino[MAX_AMOUNT - _playersAmount * INITIAL_AMOUNT];
+            this.bazar = _playersAmount == 4 ? Array.Empty<Domino>() : new Domino[MAX_AMOUNT - _playersAmount * INITIAL_AMOUNT];
+            this.bazarTilesLeft = new List<int>();
+            for (int i = 1; i <= bazar.Length; i++)
+            {
+                bazarTilesLeft.Add(i);
+            }
             InitGame();
+        }
+
+        public override string ToString()
+        {
+            return LeftNum.ToString() + ":" + RightNum.ToString();
         }
 
         public void InitGame()
@@ -45,11 +73,9 @@ namespace DominoServer
                     tilesArr[index++] = new Domino(i, j);
             for (int i = 0; i < MAX_AMOUNT; i++)
             {
-                Random random = new Random();
+                Random random = new();
                 index = random.Next(0, MAX_AMOUNT);
-                Domino temp = tilesArr[i];
-                tilesArr[i] = tilesArr[index];
-                tilesArr[index] = temp;
+                (tilesArr[index], tilesArr[i]) = (tilesArr[i], tilesArr[index]);
             }
         }
 
@@ -70,46 +96,36 @@ namespace DominoServer
 
         public List<string> GetTilesArr(int playerOrder)
         {
-            List<string> response = new List<string>();
-            response.Add(RP.YOUR_DOMINOES);
+            List<string> response = new()
+            {
+                RP.PLAYER_DOMINOES,
+                playerOrder.ToString()
+            };
             DominoPlayer player = players[playerOrder - 1];
             int tilesAmount = player.CurTilesAmount;
             response.Add(tilesAmount.ToString());
             for (int i = 0; i < tilesAmount; i++)
-                response.Add(player.tilesArr[i].FirstNum + ":" + player.tilesArr[i].SecondNum);
+                response.Add(player.tilesArr[i].ToString());
             Player.isTurnDone = false;
             return response;
         }
 
         public List<string> GetGameNums()
         {
-            List<string> response = new List<string>();
-            response.Add(RP.GAME_NUMS);
-            response.Add(LeftNum + ":" + RightNum);
+            List<string> response = new()
+            {
+                RP.GAME_NUMS,
+                ToString()
+            };
             return response;
         }
 
-        public List<string> PlaceDominoDifferent(int playerOrder, string message)
+        internal string GetBazarDomino(int playerOrder)
         {
-            List<string> response = new List<string>();
-            DominoPlayer player = players[playerOrder - 1];
-            Domino attempt = new Domino(message[message.IndexOf(":") - 1] - '0',
-                                        message[message.IndexOf(":") + 1] - '0');
-            int index = 0;
-            if (HasThisDomino(attempt, player, ref index) && message[message.Length - 1] == '1')
-                LeftNum = attempt.FirstNum == LeftNum ? attempt.SecondNum : attempt.FirstNum;
-            else
-                RightNum = attempt.FirstNum == RightNum ? attempt.SecondNum : attempt.FirstNum;
-            player.DeleteTile(index);
-            Player.isTurnDone = true;
-            return response;
-        }
-
-        internal void GetBazarDomino(int playerOrder)
-        {
-            Domino bazarDomino = bazar[bazar.Length - 1];
+            Domino bazarDomino = bazar[^1];
             bazar = bazar.SkipLast(1).ToArray();
             players[playerOrder - 1].AddTile(bazarDomino);
+            return bazarDomino.ToString();
         }
 
         internal bool CanMakeTurn(int playerOrder)
@@ -127,10 +143,10 @@ namespace DominoServer
 
         public List<string> TryToPlaceDomino(int playerOrder, string message)
         {
-            List<string> response = new List<string>();
+            List<string> response = new();
             DominoPlayer player = players[playerOrder - 1];
-            Domino attempt = new Domino(message[message.IndexOf(":") - 1] - '0',
-                                        message[message.IndexOf(":") + 1] - '0');
+            Domino attempt = new(message[message.IndexOf(":") - 1] - '0',
+                                 message[message.IndexOf(":") + 1] - '0');
             int index = 0;
             if (!HasThisDomino(attempt, player, ref index))
             {
@@ -150,11 +166,112 @@ namespace DominoServer
                 Player.isTurnDone = false;
                 return response;
             }
-            if (CanBePlacedLeft(attempt))
-                LeftNum = attempt.FirstNum == LeftNum ? attempt.SecondNum : attempt.FirstNum;
+            bool placeLeft = CanBePlacedLeft(attempt);
+            string path;
+            if (placeLeft)
+            {
+                if (attempt.FirstNum == LeftNum)
+                {
+                    LeftNum = attempt.SecondNum;
+                    path = RIGHT_PATH;
+                }
+                else
+                {
+                    LeftNum = attempt.FirstNum;
+                    path = LEFT_PATH;
+                }
+            }
             else
-                RightNum = attempt.FirstNum == RightNum ? attempt.SecondNum : attempt.FirstNum;
+            {
+                if (attempt.FirstNum == RightNum)
+                {
+                    RightNum = attempt.SecondNum;
+                    path = LEFT_PATH;
+                }
+                else
+                {
+                    RightNum = attempt.FirstNum;
+                    path = RIGHT_PATH;
+                }
+            }
+            response.Add(RP.DOMINO_PLACED);
+            response.Add(attempt.ToString()
+                         + '|'
+                         + PathToDomino(attempt.FirstNum, attempt.SecondNum, path)
+                         + '|'
+                         + (placeLeft ? "1" : "0"));
             player.DeleteTile(index);
+            Player.isTurnDone = true;
+            return response;
+        }
+
+        internal List<string> PlaceFirstDomino(int playerOrder, string message)
+        {
+            List<string> response = new();
+            Domino attempt = new(message[message.IndexOf(":") - 1] - '0',
+                                 message[message.IndexOf(":") + 1] - '0');
+            LeftNum = attempt.FirstNum;
+            RightNum = attempt.SecondNum;
+            int index = 0;
+            var player = players[playerOrder - 1];
+            if (!HasThisDomino(attempt, player, ref index))
+            {
+                response.Add(RP.NO_SUCH_DOMINO);
+                Player.isTurnDone = false;
+                return response;
+            }
+            response.Add(RP.DOMINO_PLACED);
+            response.Add(attempt.ToString()
+                         + '|'
+                         + PathToDomino(LeftNum, RightNum, LEFT_PATH)
+                         + '|'
+                         + '2');
+            player.DeleteTile(index);
+            Player.isTurnDone = true;
+            return response;
+        }
+
+        public List<string> PlaceDominoDifferent(int playerOrder, string message)
+        {
+            List<string> response = new();
+            DominoPlayer player = players[playerOrder - 1];
+            Domino attempt = new(message[message.IndexOf(":") - 1] - '0',
+                                 message[message.IndexOf(":") + 1] - '0');
+            int index = 0;
+            string path;
+            if (HasThisDomino(attempt, player, ref index) && message[^1] == '1')
+            {
+                if (attempt.FirstNum == LeftNum)
+                {
+                    LeftNum = attempt.SecondNum;
+                    path = RIGHT_PATH;
+                }
+                else
+                {
+                    LeftNum = attempt.FirstNum;
+                    path = LEFT_PATH;
+                }
+            }
+            else
+            {
+                if (attempt.FirstNum == RightNum)
+                {
+                    RightNum = attempt.SecondNum;
+                    path = LEFT_PATH;
+                }
+                else
+                {
+                    RightNum = attempt.FirstNum;
+                    path = RIGHT_PATH;
+                }
+            }
+            player.DeleteTile(index);
+            response.Add(RP.DOMINO_PLACED);
+            response.Add(attempt.ToString()
+                        + '|'
+                        + PathToDomino(attempt.FirstNum, attempt.SecondNum, path)
+                        + '|'
+                        + (message[^1] == '1' ? "1" : "0"));
             Player.isTurnDone = true;
             return response;
         }
@@ -162,19 +279,6 @@ namespace DominoServer
         private bool CanBePlaced(Domino attempt)
         {
             return CanBePlacedLeft(attempt) || CanBePlacedRight(attempt);
-        }
-
-        internal void PlaceFirstDomino(int playerOrder, string message)
-        {
-            Domino attempt = new Domino(message[message.IndexOf(":") - 1] - '0',
-                                        message[message.IndexOf(":") + 1] - '0');
-            LeftNum = attempt.FirstNum;
-            RightNum = attempt.SecondNum;
-            int index = 0;
-            var player = players[playerOrder - 1];
-            HasThisDomino(attempt, player, ref index);
-            player.DeleteTile(index);
-            Player.isTurnDone = true;
         }
 
         bool CanBePlacedLeft(Domino attempt)
@@ -193,7 +297,31 @@ namespace DominoServer
                 (attempt.FirstNum == LeftNum && attempt.SecondNum == RightNum) ||
                 (attempt.FirstNum == RightNum && attempt.SecondNum == LeftNum);
         }
-        private bool HasThisDomino(Domino attempt, DominoPlayer player, ref int index)
+
+        const string UP_PATH = "BlackDominoes/Up/";
+        const string DOWN_PATH = "BlackDominoes/Down/";
+        const string LEFT_PATH = "BlackDominoes/Left/";
+        const string RIGHT_PATH = "BlackDominoes/Right/";
+
+        private static string PathToDomino(int firstNum, int secondNum, string path)
+        {
+            return path + "Black" + firstNum.ToString() + "-" + secondNum.ToString() + ".png";
+        }
+
+        internal static List<Image> GetImagesFromFile()
+        {
+            var images = new List<Image>();
+            for (int i = 0; i <= MAX_NUM; i++)
+            {
+                for (int j = i; j <= MAX_NUM; j++)
+                {
+                    images.Add(Image.FromFile(PathToDomino(i, j, UP_PATH)));
+                }
+            }
+            return images;
+        }
+
+        private static bool HasThisDomino(Domino attempt, DominoPlayer player, ref int index)
         {
             bool hasDomino = false;
             for (int i = 0; i < player.CurTilesAmount; i++)
@@ -202,6 +330,7 @@ namespace DominoServer
                 {
                     index = i;
                     hasDomino = true;
+                    break;
                 }
             }
             if (!hasDomino)
@@ -209,18 +338,72 @@ namespace DominoServer
             return true;
         }
 
-        public bool IsRoundOver(int playersAmount)
+        public Winner IsRoundOver(int playersAmount)
         {
             int count = 0;
             for (int i = 0; i < players.Length; i++)
             {
                 var player = players[i];
                 if (player.CurTilesAmount == 0)
-                    return true;
+                    return (Winner)Enum.Parse(typeof(Winner), "Player" + (i + 1));
                 if (!CanMakeTurn(i + 1))
                     count++;
             }
-            return count == playersAmount && bazar.Length == 0;
+            if (count == playersAmount && bazar.Length == 0)
+                return Winner.Fish;
+            return Winner.None;
+        }
+
+        public int GetRoundResults(ref Winner winner)
+        {
+            int curWinner = 1;
+            int curWinningSum;
+            if (winner == Winner.Fish)
+            {
+                curWinningSum = players[0].GetTilesSum();
+                for (int i = 1; i < players.Length; i++)
+                {
+                    var player = players[i];
+                    var sum = player.GetTilesSum();
+                    if (sum > curWinningSum)
+                    {
+                        curWinner = i + 1;
+                        curWinningSum = sum;
+                    }
+                }
+            }
+            else
+            {
+                curWinner = (int)winner;
+                curWinningSum = 0;
+                foreach (var player in players)
+                {
+                     curWinningSum += player.GetTilesSum();
+                }
+            }
+            players[curWinner - 1].Points += curWinningSum;
+            winner = (Winner)curWinner;
+            return curWinningSum;
+        }
+
+        internal bool IsGameOver()
+        {
+            foreach (var player in players)
+            {
+                if (player.GetTilesSum() >= pointsAim)
+                    return true;
+            }
+            return false;
+        }
+
+        public enum Winner
+        {
+            None = 0,
+            Player1 = 1,
+            Player2 = 2,
+            Player3 = 3,
+            Player4 = 4,
+            Fish = 5
         }
     }
 }

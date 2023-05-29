@@ -10,9 +10,16 @@ C:\2 курс\4 семестр\КСиС\Курсач\DominoServer\bin\Debug\net5
 C:\2 курс\4 семестр\КСиС\Курсач\DominoServer\bin\Debug\net5.0-windows\DominoServer.runtimeconfig.json
 C:\2 курс\4 семестр\КСиС\Курсач\DominoServer\bin\Debug\net5.0-windows\DominoServer.runtimeconfig.dev.json
 C:\2 курс\4 семестр\КСиС\Курсач\DominoServer\bin\Debug\net5.0-windows\DominoServer.dll
-C:\2 курс\4 семестр\КСиС\Курсач\DominoServer\bin\Debug\net5.0-windows\ref\DominoServer.dll
 C:\2 курс\4 семестр\КСиС\Курсач\DominoServer\bin\Debug\net5.0-windows\DominoServer.pdb
 C:\2 курс\4 семестр\КСиС\Курсач\DominoServer\obj\Debug\net5.0-windows\DominoServer.dll
 C:\2 курс\4 семестр\КСиС\Курсач\DominoServer\obj\Debug\net5.0-windows\ref\DominoServer.dll
 C:\2 курс\4 семестр\КСиС\Курсач\DominoServer\obj\Debug\net5.0-windows\DominoServer.pdb
 C:\2 курс\4 семестр\КСиС\Курсач\DominoServer\obj\Debug\net5.0-windows\DominoServer.genruntimeconfig.cache
+C:\2 курс\4 семестр\КСиС\Курсач\DominoServer\obj\Debug\net5.0-windows\refint\DominoServer.dll
+C:\2 курс\4 семестр\КСиС\Курсач\DominoServer\obj\Debug\net5.0-windows\DominoServer.csproj.CopyComplete
+C:\2 курс\4 семестр\КСиС\Курсач\DominoServer\bin\Debug\net5.0-windows\System.Data.SqlClient.dll
+C:\2 курс\4 семестр\КСиС\Курсач\DominoServer\bin\Debug\net5.0-windows\runtimes\win-arm64\native\sni.dll
+C:\2 курс\4 семестр\КСиС\Курсач\DominoServer\bin\Debug\net5.0-windows\runtimes\win-x64\native\sni.dll
+C:\2 курс\4 семестр\КСиС\Курсач\DominoServer\bin\Debug\net5.0-windows\runtimes\win-x86\native\sni.dll
+C:\2 курс\4 семестр\КСиС\Курсач\DominoServer\bin\Debug\net5.0-windows\runtimes\unix\lib\netcoreapp2.1\System.Data.SqlClient.dll
+C:\2 курс\4 семестр\КСиС\Курсач\DominoServer\bin\Debug\net5.0-windows\runtimes\win\lib\netcoreapp2.1\System.Data.SqlClient.dll

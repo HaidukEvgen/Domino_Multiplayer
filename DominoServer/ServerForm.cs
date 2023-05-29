@@ -1,14 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace DominoServer
@@ -27,21 +20,17 @@ namespace DominoServer
         private string name;
         private const int PORT = 50000;
 
-        private void startButton_Click(object sender, EventArgs e)
+        private void StartButton_Click(object sender, EventArgs e)
         {
             startButton.Enabled = false;
             int playersAmount = twoRB.Checked ? 2 : threeRB.Checked ? 3 : 4;
-            game = new Game(playersAmount);
+            game = new Game(playersAmount, Int32.Parse(pointsAimUpDown.Text));
             recieveConnections = new Thread(new ThreadStart(SetUp));
             recieveConnections.Start();
         }
 
         private void ServerForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            foreach (var player in game.Players)
-            {
-                player.CloseConnections();
-            }
             Environment.Exit(Environment.ExitCode);
         }
 
@@ -54,7 +43,7 @@ namespace DominoServer
                 Invoke(new DisplayDelegate(DisplayMessage),
                 new object[] { (message + "\n\r") });
             }
-            else 
+            else
                 displayTextBox.AppendText(message + "\n");
         }
 
@@ -80,6 +69,11 @@ namespace DominoServer
                     }
                 }
             }
+        }
+
+        private void ServerForm_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }

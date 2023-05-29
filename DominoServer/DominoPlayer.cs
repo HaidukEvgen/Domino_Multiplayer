@@ -32,5 +32,16 @@ namespace DominoServer
             }
             CurTilesAmount--;
         }
+
+        public int GetTilesSum()
+        {
+            int sum = 0;
+            foreach (var tile in tilesArr)
+            {
+                if (tile == null) break;
+                sum += tile.FirstNum + tile.SecondNum;
+            }
+            return sum;
+        }
     }
 }

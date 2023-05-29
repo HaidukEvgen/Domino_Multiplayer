@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace DominoServer
 {
     public class Domino
@@ -37,5 +32,11 @@ namespace DominoServer
         {
             throw new NotImplementedException();
         }
+
+        public override string ToString()
+        {
+            return FirstNum.ToString() + ":" + SecondNum.ToString();
+        }
+
     }
 }
